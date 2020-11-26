@@ -25,7 +25,6 @@
   "dependencies": {
     "@types/jwt-decode": "^2.2.1",
     "axios": "^0.19.2",
-    "blob": "^0.1.0",
     "jwt-decode": "^2.2.0",
     "query-string": "^6.13.1"
   },

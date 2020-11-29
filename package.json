@@ -11,7 +11,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest --runInBand --coverage",
-    "postinstall": "build",
+    "postinstall": "tsc",
     "version": "tsc"
   },
   "repository": {

@@ -374,7 +374,7 @@ export default class Auth {
     return this.JWTMemory.getJWT();
   }
 
-  public getClaim(claim: string): string {
+  public getClaim(claim: string): string | string[] {
     return this.JWTMemory.getClaim(claim);
   }
 
@@ -397,7 +397,12 @@ export default class Auth {
       });
     } catch (error) {
       // TODO: if error was 401 Unauthorized => clear refresh token locally.
-      return this.setLoginState(false);
+      console.log("error refreshing..");
+      if (error.response?.status === 401) {
+        return this.setLoginState(false);
+      } else {
+        return; // refresh failed
+      }
     }
 
     // set refresh token
@@ -526,13 +531,14 @@ export default class Auth {
     const res = await this.http_client.post("/mfa/totp", {
       code,
       ticket,
+      cookie: this.use_cookies,
     });
+
+    this.setLoginState(true, res.data.jwt_token, res.data.jwt_expires_in);
 
     // set refresh token
     if (!this.use_cookies) {
       await this.setItem("refresh_token", res.data.refresh_token);
     }
-
-    this.setLoginState(true, res.data.jwt_token, res.data.jwt_expires_in);
   }
 }

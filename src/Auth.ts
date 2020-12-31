@@ -293,11 +293,12 @@ export default class Auth {
 
   public async login(
     email: string,
-    password: string
+    password: string,
+    path?: string,
   ): Promise<types.LoginData> {
     let res;
     try {
-      res = await this.http_client.post("/login", {
+      res = await this.http_client.post(path || "/login", {
         email,
         password,
         cookie: this.use_cookies,

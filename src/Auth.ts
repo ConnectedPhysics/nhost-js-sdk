@@ -319,7 +319,7 @@ export default class Auth {
       await this.setItem("refresh_token", res.data.refresh_token);
     }
 
-    return {};
+    return res.data;
   }
 
   public async logout(all: boolean = false): Promise<void> {
@@ -459,6 +459,18 @@ export default class Auth {
     await this.http_client.post("/change-email/change", {
       ticket,
     });
+  }
+
+  public async activateVolunteerWithNewPassword(new_password: string): Promise<void> {
+    return await this.http_client.post(
+      '/activate-volunteer',
+      {
+        new_password
+      },
+      {
+        headers: this.generateHeaders(),
+      }
+    );
   }
 
   public async changePassword(

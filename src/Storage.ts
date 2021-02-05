@@ -87,11 +87,11 @@ export default class Storage {
         metadata && metadata.hasOwnProperty("content-type")
           ? metadata["content-type"]
           : null;
-<<<<<<< HEAD
-      file = new File([fileData], "tmp", { type: contentType });
-=======
+
+      // file = new File([fileData], "tmp", { type: contentType });
+
       blob = new Blob([fileData], { type: contentType });
->>>>>>> v3.0.0-5
+
     } else if (type === "data_url") {
       let isBase64 = false;
       let contentType: string | undefined = undefined;
@@ -115,11 +115,9 @@ export default class Storage {
         ? base64Bytes(StringFormat.BASE64, restData)
         : percentEncodedBytes(restData);
 
-<<<<<<< HEAD
-      file = new File([fileData], "tmp", { type: contentType });
-=======
+
+      // file = new File([fileData], "tmp", { type: contentType });
       blob = new Blob([fileData], { type: contentType });
->>>>>>> v3.0.0-5
     }
 
     // create fil from message

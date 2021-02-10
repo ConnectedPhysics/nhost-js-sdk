@@ -317,6 +317,7 @@ export default class Auth {
     email,
     password,
     provider,
+    custom_path = '/login'
   }: types.loginCredentials): Promise<types.Session> {
     if (provider) {
       window.location.href = `${this.baseURL}/auth/providers/${provider}`;
@@ -325,7 +326,7 @@ export default class Auth {
 
     let res;
     try {
-      res = await this.httpClient.post("/login", {
+      res = await this.httpClient.post(custom_path, {
         email,
         password,
         cookie: this.useCookies,

@@ -11,7 +11,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest --runInBand --coverage",
-    "version": "tsc"
+    "version": "tsc",
+    "prepare": "tsc"
   },
   "repository": {
     "type": "git",

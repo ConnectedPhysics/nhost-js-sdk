@@ -265,6 +265,18 @@ export default class Auth {
     await this.httpClient.get(`/activate?ticket=${ticket}`);
   }
 
+  public async activateVolunteerWithNewPassword(new_password: string): Promise<void> {
+    return await this.httpClient.post(
+      '/activate-volunteer',
+      {
+        new_password
+      },
+      {
+        headers: this._generateHeaders(),
+      }
+    );
+  }
+
   public async changeEmail(new_email: string): Promise<void> {
     await this.httpClient.post(
       "/change-email",

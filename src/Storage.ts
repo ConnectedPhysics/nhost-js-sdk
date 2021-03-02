@@ -1,21 +1,22 @@
 import axios, { AxiosInstance } from "axios";
 import * as types from "./types";
-import JWTMemory from "./JWTMemory";
+import UserSession from "./UserSession";
 import {
   StringFormat,
   base64Bytes,
   utf8Bytes,
   percentEncodedBytes,
 } from "./utils";
+// @ts-ignore
 import Blob from "node-blob";
 
 export default class Storage {
   private httpClient: AxiosInstance;
-  private JWTMemory: JWTMemory;
   private useCookies: boolean;
+  private currentSession: UserSession;
 
-  constructor(config: types.StorageConfig, JWTMemory: JWTMemory) {
-    this.JWTMemory = JWTMemory;
+  constructor(config: types.StorageConfig, session: UserSession) {
+    this.currentSession = session;
     this.useCookies = config.useCookies;
 
     this.httpClient = axios.create({
@@ -28,7 +29,7 @@ export default class Storage {
   private generateAuthorizationHeader(): null | types.Headers {
     if (this.useCookies) return null;
 
-    const JWTToken = this.JWTMemory.getJWT();
+    const JWTToken = this.currentSession.getSession()?.jwt_token;
 
     if (JWTToken) {
       return {
@@ -50,7 +51,7 @@ export default class Storage {
 
     // todo: handle metadata
     if (metadata !== null) {
-      console.warn("Metadata is not yet handled in this NHOST JS SDK.");
+      console.warn("Metadata is not yet handled in this version..");
     }
 
     const upload_res = await this.httpClient.post(
@@ -72,21 +73,18 @@ export default class Storage {
     path: string,
     data: string,
     type: StringFormat = "raw",
-    metadata: object | null = null,
+    metadata: { "content-type": string } | null = null,
     onUploadProgress: any | undefined = undefined
   ) {
-    // todo: handle metadata
-    // if (metadata !== null) {
-    //   console.warn("Metadata is not yet handled in this NHOST JS SDK.");
-    // }
-
     let blob;
     if (type === "raw") {
       const fileData = utf8Bytes(data);
+
       const contentType =
         metadata && metadata.hasOwnProperty("content-type")
           ? metadata["content-type"]
           : null;
+
       blob = new Blob([fileData], { type: contentType });
     } else if (type === "data_url") {
       let isBase64 = false;

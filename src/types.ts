@@ -5,6 +5,7 @@ export interface UserConfig {
   clientStorage?: ClientStorage;
   clientStorageType?: string;
   autoLogin?: boolean;
+  ssr?: boolean;
 }
 
 export interface AuthConfig {
@@ -26,7 +27,7 @@ export interface ClientStorage {
   // localStorage
   // AsyncStorage
   // https://react-native-community.github.io/async-storage/docs/usage
-  setItem?: (key: string, value: unknown) => void;
+  setItem?: (key: string, value: string) => void;
   getItem?: (key: string) => any;
   removeItem?: (key: string) => void;
 
@@ -67,31 +68,39 @@ export type Provider =
   | "twitter"
   | "windowslive";
 
-export interface registerParameters {
-  email: string;
-  password: string;
-  registrationOptions: {
+export interface UserCredentials {
+  email?: string;
+  password?: string;
+  provider?: Provider;
+  options?: {
     userData?: any;
     defaultRole?: string;
     allowedRoles?: string[];
   };
 }
-
-export interface loginCredentials {
-  email?: string;
-  password?: string;
-  provider?: Provider;
-}
 export interface Session {
-  jwtToken: string;
-  jwtExpiresIn: number;
-  refreshToken?: string; // not present if useCookie
+  jwt_token: string;
+  jwt_expires_in: number;
   user: User;
+  refresh_token?: string; // not present if useCookie
 }
 
 export interface User {
   id: string;
   email?: string;
-  displayName?: string;
-  avatarUrl?: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+export interface JWTHasuraClaims {
+  [claim: string]: string | string[];
+  "x-hasura-allowed-roles" : string[];
+  "x-hasura-default-role": string;
+  "x-hasura-user-id": string;
+}
+
+// https://hasura.io/docs/1.0/graphql/core/auth/authentication/jwt.html#the-spec
+export interface JWTClaims {
+  sub?: string;
+  iat?: number;
+  "https://hasura.io/jwt/claims": JWTHasuraClaims;
 }

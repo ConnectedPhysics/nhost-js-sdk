@@ -3,10 +3,12 @@ import queryString from "query-string";
 import * as types from "./types";
 import UserSession from "./UserSession";
 
+export type AuthChangedFunction = (isAuthenticated: boolean) => void;
+
 export default class Auth {
   private httpClient: AxiosInstance;
   private tokenChangedFunctions: Function[];
-  private authChangedFunctions: Function[];
+  private authChangedFunctions: AuthChangedFunction[];
 
   private refreshInterval: any;
   private useCookies: boolean;
@@ -224,7 +226,7 @@ export default class Auth {
     return unsubscribe;
   }
 
-  public onAuthStateChanged(fn: Function): Function {
+  public onAuthStateChanged(fn: AuthChangedFunction): Function {
     this.authChangedFunctions.push(fn);
 
     // get index;
@@ -247,6 +249,20 @@ export default class Auth {
   public isAuthenticated(): boolean | null {
     if (this.loading) return null;
     return this.currentSession.getSession() !== null;
+  }
+
+  public isAuthenticatedAsync(): Promise<boolean> {
+    const isAuthenticated = this.isAuthenticated();
+
+    return new Promise(resolve => {
+      if(isAuthenticated !== null) resolve(isAuthenticated);
+      else {
+        const unsubscribe = this.onAuthStateChanged((isAuthenticated) => {
+          resolve(isAuthenticated);
+          unsubscribe();
+        })
+      }
+    })
   }
 
   public getJWTToken(): string | null {
@@ -427,6 +443,7 @@ export default class Auth {
         }
         this.clientStorage.setItem(key, value);
         break;
+      case "custom":
       case "react-native":
         if (typeof this.clientStorage.setItem !== "function") {
           console.error(`this.clientStorage.setItem is not a function`);
@@ -461,6 +478,7 @@ export default class Auth {
           break;
         }
         return this.clientStorage.getItem(key);
+      case "custom":
       case "react-native":
         if (typeof this.clientStorage.getItem !== "function") {
           console.error(`this.clientStorage.getItem is not a function`);
@@ -493,6 +511,7 @@ export default class Auth {
           break;
         }
         return this.clientStorage.removeItem(key);
+      case "custom":
       case "react-native":
         if (typeof this.clientStorage.removeItem !== "function") {
           console.error(`this.clientStorage.removeItem is not a function`);
@@ -552,9 +571,7 @@ export default class Auth {
       // set lock to avoid two refresh token request being sent at the same time with the same token.
       // If so, the last request will fail because the first request used the refresh token
       if (this.refreshTokenLock) {
-        return console.debug(
-          "refresh token already in transit. Halting this request."
-        );
+        return;
       }
       this.refreshTokenLock = true;
 
@@ -617,34 +634,33 @@ export default class Auth {
       await this._setItem("nhostRefreshToken", session.refresh_token);
     }
 
-    const JWTExpiresIn = session.jwt_expires_in;
-    const refreshIntervalTime = this.refreshIntervalTime
-      ? this.refreshIntervalTime
-      : Math.max(30 * 1000, JWTExpiresIn - 45000); //45 sec before expires
-
-    // start refresh token interval after logging in
-    this.refreshInterval = setInterval(
-      this._refreshToken.bind(this),
-      refreshIntervalTime
-    );
-
-    // refresh token after computer has been sleeping
-    // https://stackoverflow.com/questions/14112708/start-calling-js-function-when-pc-wakeup-from-sleep-mode
-    this.refreshIntervalSleepCheckLastSample = Date.now();
-    this.refreshSleepCheckInterval = setInterval(() => {
-      if (
-        Date.now() - this.refreshIntervalSleepCheckLastSample >=
-        this.sampleRate * 2
-      ) {
-        this._refreshToken();
-      }
-      this.refreshIntervalSleepCheckLastSample = Date.now();
-    }, this.sampleRate);
-
-    this.loading = false;
-
     if (!previouslyAuthenticated) {
+      // start refresh token interval after logging in
+      const JWTExpiresIn = session.jwt_expires_in;
+      const refreshIntervalTime = this.refreshIntervalTime
+        ? this.refreshIntervalTime
+        : Math.max(30 * 1000, JWTExpiresIn - 45000); //45 sec before expires
+      this.refreshInterval = setInterval(
+        this._refreshToken.bind(this),
+        refreshIntervalTime
+      );
+
+      // refresh token after computer has been sleeping
+      // https://stackoverflow.com/questions/14112708/start-calling-js-function-when-pc-wakeup-from-sleep-mode
+      this.refreshIntervalSleepCheckLastSample = Date.now();
+      this.refreshSleepCheckInterval = setInterval(() => {
+        if (
+          Date.now() - this.refreshIntervalSleepCheckLastSample >=
+          this.sampleRate * 2
+        ) {
+          this._refreshToken();
+        }
+        this.refreshIntervalSleepCheckLastSample = Date.now();
+      }, this.sampleRate);
+
       this.authStateChanged(true);
     }
+
+    this.loading = false;
   }
 }

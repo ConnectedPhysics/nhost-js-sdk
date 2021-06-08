@@ -151,6 +151,7 @@ export default class Auth {
     mfa?: {
       ticket: string;
     };
+    magicLink?: true;
   }> {
     if (provider) {
       window.location.href = `${this.baseURL}/auth/providers/${provider}`;
@@ -173,14 +174,16 @@ export default class Auth {
       return { session: null, user: null, mfa: { ticket: res.data.ticket } };
     }
 
+    if ("magicLink" in res.data) {
+      return { session: null, user: null, magicLink: true };
+    }
+
     this._setSession(res.data);
 
     return { session: res.data, user: res.data.user };
   }
 
-  public async logout(
-    all: boolean = false
-  ): Promise<{
+  public async logout(all: boolean = false): Promise<{
     session: null;
     user: null;
   }> {
@@ -210,12 +213,12 @@ export default class Auth {
     this.tokenChangedFunctions.push(fn);
 
     // get index;
-    const tokenChangedFunctionIndex = this.authChangedFunctions.length - 1;
+    const tokenChangedFunctionIndex = this.tokenChangedFunctions.length - 1;
 
     const unsubscribe = () => {
       try {
         // replace onTokenChanged with empty function
-        this.authChangedFunctions[tokenChangedFunctionIndex] = () => {};
+        this.tokenChangedFunctions[tokenChangedFunctionIndex] = () => {};
       } catch (err) {
         console.warn(
           "Unable to unsubscribe onTokenChanged function. Maybe you already did?"
@@ -254,15 +257,15 @@ export default class Auth {
   public isAuthenticatedAsync(): Promise<boolean> {
     const isAuthenticated = this.isAuthenticated();
 
-    return new Promise(resolve => {
-      if(isAuthenticated !== null) resolve(isAuthenticated);
+    return new Promise((resolve) => {
+      if (isAuthenticated !== null) resolve(isAuthenticated);
       else {
         const unsubscribe = this.onAuthStateChanged((isAuthenticated) => {
           resolve(isAuthenticated);
           unsubscribe();
-        })
+        });
       }
-    })
+    });
   }
 
   public getJWTToken(): string | null {
